@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="ui/assets/bee.png" alt="Bumblebee Trusts Wikipedia" width="180">
+</p>
+
+
 # Bumblebee Trusts Wikipedia (BTW)
 
 A simple Siri-style assistant for Linux/Hyprland made using speech-to-text from Groq Whisper,and the responses come from the Mistral API.
