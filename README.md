@@ -1,6 +1,6 @@
-# Bumblebee Voice Assistant (Hyprland, Bash Orchestrator)
+# Bumblebee Trusts Wikipedia (BTW)
 
-A simple Siri-style assistant for Linux/Hyprland that uses a Bash orchestrator, a small Python recorder with VAD, and lightweight YAD HTML views. Speech-to-text runs on Groq Whisper, responses come from the Mistral API, and audio playback uses ALSA.
+A simple Siri-style assistant for Linux/Hyprland made using speech-to-text from Groq Whisper,and the responses come from the Mistral API.
 
 ## Overview
 - Listening is handled by `vad_record.py` (webrtcvad) and auto-stops on silence.
@@ -9,14 +9,6 @@ A simple Siri-style assistant for Linux/Hyprland that uses a Bash orchestrator, 
 - TTS uses Groq TTS; audio is played with `aplay`.
 - UI is a minimal YAD popup rendered from simple HTML (no heavy frameworks).
 
-## Architecture
-- `scripts/assistant.sh`: Main orchestrator. Coordinates UI, recording, STT, LLM, and TTS.
-- `scripts/vad_record.py`: Voice activity detection + recording to `tmp/query.wav`.
-- `scripts/stt.sh`: Sends `tmp/query.wav` to Groq STT, prints JSON with recognized text.
-- `scripts/tts.sh`: Calls Groq TTS API, writes `tmp/tts_output.wav`.
-- `scripts/env.sh`: Exports API keys consumed by the scripts.
-- `ui/*.html` + `ui/*.css`: YAD-rendered HTML views for Listening/Processing/Reply.
-- `tmp/`: Scratch directory for audio files and transient outputs.
 
 ## Requirements
 - Linux with a working microphone (Hyprland optional).
@@ -68,22 +60,6 @@ chmod +x scripts/*.sh
 # Start the assistant (from repo root)
 scripts/assistant.sh
 ```
-Flow (one-shot by default):
-1. Shows “Listening…” when the recorder is ready.
-2. Records speech and stops automatically on silence.
-3. Switches to “Processing…” while transcribing and generating a reply.
-4. Displays “You” and “Bumblebee” messages and plays TTS audio.
-5. Exits when done. Re-run to start again.
-
-## Exit Phrases (planned)
-Support for voice-controlled termination (e.g., “stop listening”, “exit assistant”, “go to sleep”) is planned. Current behavior is single run; continuous loop functionality can be enabled in `assistant.sh` in a future update.
-
-## Troubleshooting
-- Invalid API key: ensure `scripts/env.sh` is sourced and that `stt.sh` uses `GROQ_API_KEY` (not `GROK_API_KEY`).
-- `ModuleNotFoundError: pkg_resources`: install `setuptools` (already included in `requirements.txt`).
-- No audio playback: verify `aplay` exists and your user can access the audio device.
-- STT returns empty: check that `tmp/query.wav` was created; microphone input and permissions.
-- Recorder errors: make sure `libportaudio2` is installed and that the Python venv is active.
 
 ## Project Structure
 ```
@@ -107,7 +83,3 @@ btw/
 	└── reply.html
 ```
 
-## Notes
-- Keep `scripts/env.sh` out of version control or use a secrets manager.
-- YAD window geometry/position can be tuned in the scripts for your setup.
-- If you prefer PipeWire tooling, you can swap `aplay` for `pw-play` (with minor script changes).
