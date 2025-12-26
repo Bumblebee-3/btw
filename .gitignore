@@ -6,7 +6,7 @@ __pycache__/
 venv/
 
 *.log
-
+scripts/env.sh
 scripts/old.sh
 
 .DS_Store
