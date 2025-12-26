@@ -1,0 +1,81 @@
+/* Fixed window layout */
+:root { color-scheme: dark; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "JetBrains Mono", monospace;
+  background: transparent;
+}
+
+.assistant-container {
+  width: max-content;         /* shrink to fit content */
+  max-width: 680px;           /* sensible cap */
+  height: auto;
+  box-sizing: border-box;     /* include padding in size */
+  margin: 0;
+  padding: 18px 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 0, 200, 0.45);
+  background: linear-gradient(135deg, rgba(28, 18, 55, 0.94), rgba(12, 8, 25, 0.94));
+  box-shadow: 0 0 12px rgba(255, 0, 200, 0.25), 0 0 24px rgba(0, 200, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Smaller padding for mini states (listening/processing) */
+.assistant-container.assistant-mini {
+  padding: 12px 12px;
+}
+
+.title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255, 0, 200, 0.85);
+  text-shadow: 0 0 8px rgba(255, 0, 200, 0.6);
+  margin-bottom: 8px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.status img {
+  width: 100px; /* exact */
+  height: 100px; /* exact */
+  object-fit: contain;
+}
+
+.reply { display: flex; flex-direction: column; gap: 8px; }
+
+.you, .bot {
+  white-space: normal; /* allow wrapping */
+  overflow-wrap: anywhere; /* avoid clipping */
+  word-break: break-word;
+  color: #f6e9ff;
+}
+
+.you {
+  font-size: 14px;
+  color: #9ffcff;
+  text-shadow: 0 0 6px rgba(0, 200, 255, 0.5);
+}
+
+.bot {
+  font-size: 16px;
+  color: #ffd6ff;
+  text-shadow: 0 0 8px rgba(255, 0, 200, 0.5), 0 0 14px rgba(255, 0, 200, 0.3);
+}
+
+.reply-scroll {
+  width: fit-content;     /* only as wide as text needs */
+  max-width: 680px;       /* cap width */
+  max-height: 60vh;       /* avoid giant windows */
+  overflow-y: auto;       /* vertical scroll when long */
+  padding-right: 6px;
+}

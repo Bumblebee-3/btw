@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.pyo
+
+.venv/
+venv/
+
+*.log
+
+scripts/old.sh
+
+.DS_Store
+*.swp
+*.swo
+.idea/
