@@ -14,4 +14,3 @@ scripts/old.sh
 *.swo
 .idea/
 
-tmp/
