@@ -8,6 +8,7 @@ venv/
 *.log
 scripts/env.sh
 scripts/old.sh
+scripts/commands_cache.json
 
 .DS_Store
 *.swp

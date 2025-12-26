@@ -1,0 +1,80 @@
+[
+  {
+    "id": "brightness_up",
+    "description": "increase screen brightness",
+    "shell_command": "brightnessctl set +10%",
+    "dangerous": false
+  },
+  {
+    "id": "brightness_down",
+    "description": "decrease screen brightness",
+    "shell_command": "brightnessctl set 10%-",
+    "dangerous": false
+  },
+  {
+    "id": "brightness_half",
+    "description": "set brightness to fifty percent",
+    "shell_command": "brightnessctl set 50%",
+    "dangerous": false
+  },
+  {
+    "id": "volume_up",
+    "description": "increase system volume",
+    "shell_command": "pactl set-sink-volume @DEFAULT_SINK@ +5%",
+    "dangerous": false
+  },
+  {
+    "id": "volume_down",
+    "description": "decrease system volume",
+    "shell_command": "pactl set-sink-volume @DEFAULT_SINK@ -5%",
+    "dangerous": false
+  },
+  {
+    "id": "volume_mute",
+    "description": "mute the volume",
+    "shell_command": "pactl set-sink-mute @DEFAULT_SINK@ 1",
+    "dangerous": false
+  },
+  {
+    "id": "system_shutdown",
+    "description": "shut down the system",
+    "shell_command": "systemctl poweroff",
+    "dangerous": true
+  },
+  {
+    "id": "system_reboot",
+    "description": "reboot the system",
+    "shell_command": "systemctl reboot",
+    "dangerous": true
+  },
+  {
+    "id": "system_suspend",
+    "description": "suspend the system",
+    "shell_command": "systemctl suspend",
+    "dangerous": true
+  },
+  {
+    "id": "system_lock",
+    "description": "lock laptop",
+    "shell_command": "swaylock",
+    "dangerous": false
+  },
+  {
+    "id": "wifi_on",
+    "description": "turn on wifi",
+    "shell_command": "nmcli radio wifi on",
+    "dangerous": false
+  },
+  {
+    "id": "wifi_off",
+    "description": "turn off wifi",
+    "shell_command": "nmcli radio wifi off",
+    "dangerous": false
+  },
+  {
+    "id": "arch_update",
+    "description": "update system packages",
+    "shell_command": "$HOME/btw/scripts/arch_update.sh",
+    "dangerous": true
+  }
+]

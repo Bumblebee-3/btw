@@ -32,21 +32,29 @@ if [[ -z "$TEXT" ]]; then
   exit 0
 fi
 
-RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
-  -H "Authorization: Bearer $MISTRAL_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d "$(jq -n \
-    --arg q "$TEXT" \
-    '{
-      model: "mistral-small",
-      messages: [
-        {role: "system", content: "You are a concise voice assistant. Respond to the user queries briefly. Use a friendly tone."},
-        {role: "user", content: $q}
-      ]
-    }')"
-)
+CMD_JSON=$(python $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/commands.py --plan "$TEXT" 2>/dev/null || true)
+CMD_TYPE=$(printf '%s' "$CMD_JSON" | jq -r '.type // empty')
 
-REPLY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+if [[ "$CMD_TYPE" == "confirmed" ]]; then
+  REPLY=$(printf '%s' "$CMD_JSON" | jq -r '.spoken // "Done."')
+elif [[ "$CMD_TYPE" == "cancelled" ]]; then
+  REPLY="Cancelled."
+else
+  RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
+    -H "Authorization: Bearer $MISTRAL_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$(jq -n \
+      --arg q "$TEXT" \
+      '{
+        model: "mistral-small",
+        messages: [
+          {role: "system", content: "You are a concise voice assistant. Respond to the user queries briefly. Use a friendly tone."},
+          {role: "user", content: $q}
+        ]
+      }')"
+  )
+  REPLY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+fi
 
 kill "$PROC_PID" 2>/dev/null || true
 
@@ -87,6 +95,12 @@ REPLY_PID=$!
 
 "$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/scripts/tts.sh" "$REPLY"
 aplay "$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/tmp/tts_output.wav"
+
+# If a command was confirmed, execute it AFTER speaking
+if [[ "$CMD_TYPE" == "confirmed" ]]; then
+  CMD_ID=$(printf '%s' "$CMD_JSON" | jq -r '.id')
+  python $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/commands.py --exec-id "$CMD_ID" >/dev/null 2>&1 || true
+fi
 
 sleep 6
 kill "$REPLY_PID" 2>/dev/null || true

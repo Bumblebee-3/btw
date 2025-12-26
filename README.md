@@ -16,10 +16,11 @@ A simple Siri-style assistant for Linux/Hyprland made using speech-to-text from 
 
 
 ## Requirements
-- Linux with a working microphone (Hyprland optional).
+- Linux with a working microphone.
 - System packages: `yad`, `jq`, `curl`, `alsa-utils` (`aplay`).
 - Python 3.9+ with venv.
 - Runtime library: `portaudio` (Arch package providing `libportaudio.so` required by `sounddevice`).
+ - Polkit agent for privileged actions: `polkit-gnome` (or `polkit-kde-agent`, `lxqt-policykit`).
 
 ## Python Dependencies
 Defined in `requirements.txt`:
@@ -54,8 +55,14 @@ Create or edit `scripts/env.sh` with your API keys (do not commit secrets):
 ```bash
 export GROQ_API_KEY="gsk_..."      # Groq (STT & TTS)
 export MISTRAL_API_KEY="sk_..."    # Mistral (LLM)
+export GEMINI_API_KEY="AIza..."     # Google Gemini (embeddings for command matching)
 ```
 `assistant.sh` sources this file at startup.
+
+If you plan to run privileged commands (e.g., package updates), ensure a polkit agent is running:
+```zsh
+sudo pacman -S polkit-gnome   # or polkit-kde-agent, lxqt-policykit
+```
 
 ## Usage
 ```zsh
@@ -64,6 +71,28 @@ chmod +x scripts/*.sh
 
 # Start the assistant (from repo root)
 scripts/assistant.sh
+```
+
+### System Command Execution (Safe, Registry-Based)
+- The assistant can execute pre-approved system commands via semantic matching (Google Gemini embeddings).
+- Only commands in `scripts/commands.json` are eligible. Each entry includes `id`, `description`, `shell_command`, `dangerous`.
+- Embeddings are cached in `scripts/commands_cache.json` to avoid recomputation every run.
+- Safety:
+	- No dynamic command construction, only exact registry commands are executed.
+	- `dangerous: true` prompts a YAD confirmation first.
+	- The assistant speaks the confirmation (e.g., “Locking the session.”) before execution.
+
+Examples
+```zsh
+# CLI test without the full assistant
+python scripts/commands.py --plan "increase brightness"
+python scripts/commands.py --exec-id brightness_up
+```
+
+Arch updates progress
+```zsh
+# Shows a YAD progress bar and status while running via polkit
+scripts/arch_update.sh
 ```
 
 ## Project Structure
@@ -76,7 +105,13 @@ btw/
 │   ├── env.sh
 │   ├── stt.sh
 │   ├── tts.sh
-│   └── vad_record.py
+│   ├── vad_record.py
+│   ├── commands.py
+│   ├── matcher.py
+│   ├── embeddings.py
+│   ├── commands.json
+│   ├── arch_update.sh
+│   └── commands_cache.json (generated)
 ├── tmp/
 │   ├── query.wav
 │   └── tts_output.wav
@@ -86,5 +121,8 @@ btw/
 	├── listening.html
 	├── processing.html
 	└── reply.html
+
 ```
+
+
 
