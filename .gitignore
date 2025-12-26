@@ -13,3 +13,5 @@ scripts/old.sh
 *.swp
 *.swo
 .idea/
+
+tmp/
