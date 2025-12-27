@@ -99,7 +99,8 @@ aplay "$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/tmp/tts_output.wav
 # If a command was confirmed, execute it AFTER speaking
 if [[ "$CMD_TYPE" == "confirmed" ]]; then
   CMD_ID=$(printf '%s' "$CMD_JSON" | jq -r '.id')
-  python $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/commands.py --exec-id "$CMD_ID" >/dev/null 2>&1 || true
+  CMD_PARAMS=$(printf '%s' "$CMD_JSON" | jq -c '.params // {}')
+  python $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/commands.py --exec-id "$CMD_ID" --params "$CMD_PARAMS" >/dev/null 2>&1 || true
 fi
 
 sleep 6

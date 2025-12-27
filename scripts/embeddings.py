@@ -50,7 +50,15 @@ def embed_text(text: str) -> list:
 
 
 def load_or_build_cache(commands: list, cache_path: str) -> dict:
-    """Return dict[id] -> {description, embedding}. Recompute missing/mismatched."""
+    """
+    Return dict with per-command example embeddings:
+    {
+      id: {
+        "description": str,
+        "examples": [ {"text": str, "embedding": [...]}, ... ]
+      }
+    }
+    """
     cache = {}
     if os.path.exists(cache_path):
         try:
@@ -62,12 +70,26 @@ def load_or_build_cache(commands: list, cache_path: str) -> dict:
     changed = False
     for cmd in commands:
         cid = cmd["id"]
-        desc = cmd["description"].strip()
-        entry = cache.get(cid)
-        if not entry or entry.get("description") != desc or not entry.get("embedding"):
-            vec = embed_text(desc)
-            cache[cid] = {"description": desc, "embedding": vec}
-            changed = True
+        desc = (cmd.get("description") or "").strip()
+        examples = cmd.get("examples") or []
+        if not isinstance(examples, list):
+            examples = []
+        entry = cache.get(cid) or {}
+        out_examples = []
+
+        # Re-embed description as a first example for broader coverage
+        texts = [t for t in [desc] + examples if t and isinstance(t, str)]
+
+        cached_map = {e.get("text"): e.get("embedding") for e in entry.get("examples", []) if isinstance(e, dict)}
+        for t in texts:
+            emb = cached_map.get(t)
+            if not emb:
+                emb = embed_text(t)
+                changed = True
+            out_examples.append({"text": t, "embedding": emb})
+
+        cache[cid] = {"description": desc, "examples": out_examples}
+
     if changed:
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(cache, f)

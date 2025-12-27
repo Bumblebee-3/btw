@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Prompt for polkit authorization first, so progress window doesn't overlap
+if ! pkexec /usr/bin/true; then
+  exit 1
+fi
 
 progress_stream() {
   echo "0"
-  echo "# Awaiting authorization..."
+  echo "# Updating packages..."
   stdbuf -oL -eL pkexec /usr/bin/pacman -Syu --noconfirm 2>&1 | while IFS= read -r line; do
     echo "# $line"
     if [[ "$line" =~ ^\(([0-9]+)/([0-9]+)\)\  ]]; then

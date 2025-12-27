@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Tuple, Dict, Any
 
 
 def cosine_similarity(a: List[float], b: List[float]) -> float:
@@ -13,17 +13,25 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
     return dot / (na * nb)
 
 
-def best_match(query_vec: List[float], registry: list, cache: dict):
-    """Return (command, score) highest cosine match."""
-    best = None
-    best_score = -1.0
+def rank_matches(query_vec: List[float], registry: list, cache: dict) -> List[Tuple[Dict[str, Any], float, str]]:
+    """
+    Return sorted list of (command, score, matched_text) using example embeddings.
+    """
+    results: List[Tuple[Dict[str, Any], float, str]] = []
     for cmd in registry:
         cid = cmd["id"]
-        emb = cache.get(cid, {}).get("embedding")
-        if not emb:
-            continue
-        score = cosine_similarity(query_vec, emb)
-        if score > best_score:
-            best = cmd
-            best_score = score
-    return best, best_score
+        exs = cache.get(cid, {}).get("examples", [])
+        best_for_cmd = -1.0
+        best_text = ""
+        for e in exs:
+            emb = e.get("embedding")
+            if not emb:
+                continue
+            s = cosine_similarity(query_vec, emb)
+            if s > best_for_cmd:
+                best_for_cmd = s
+                best_text = e.get("text", "")
+        if best_for_cmd >= 0.0:
+            results.append((cmd, best_for_cmd, best_text))
+    results.sort(key=lambda x: x[1], reverse=True)
+    return results
