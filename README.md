@@ -146,15 +146,6 @@ btw/
 	├── processing.html
 	└── reply.html
 
-## Troubleshooting
-- Polkit dialog behind YAD: Fixed by pre-auth (`pkexec true`) before showing progress. Verify a polkit agent is running.
-- Unbound variable errors in `syst_upd.sh`: Install `pacman-contrib` for `checkupdates`; script initializes missing vars under `set -u`.
-- Weak command matching after registry changes: remove the cache to rebuild embeddings.
-```zsh
-rm -f scripts/commands_cache.json
-```
-
-```
 
 
 
