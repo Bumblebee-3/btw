@@ -74,13 +74,17 @@ scripts/assistant.sh
 ```
 
 ### System Command Execution (Safe, Registry-Based)
-- The assistant can execute pre-approved system commands via semantic matching (Google Gemini embeddings).
-- Only commands in `scripts/commands.json` are eligible. Each entry includes `id`, `description`, `shell_command`, `dangerous`.
+- The assistant executes pre-approved system commands via semantic matching (Google Gemini embeddings).
+- Only commands in `scripts/commands.json` are eligible. Each entry includes:
+	- `id`, `category`, `description`, `dangerous`
+	- `examples` (paraphrases used for matching)
+	- `parameters` metadata (`value`, `delta` for brightness/volume)
+	- `shell_command_template` (deterministic; no LLM-generated shell)
 - Embeddings are cached in `scripts/commands_cache.json` to avoid recomputation every run.
 - Safety:
-	- No dynamic command construction, only exact registry commands are executed.
-	- `dangerous: true` prompts a YAD confirmation first.
-	- The assistant speaks the confirmation (e.g., “Locking the session.”) before execution.
+	- No dynamic command construction; templates substitute only safe integers.
+	- `dangerous: true` shows a YAD confirmation with the exact command.
+	- The assistant speaks the intent first (e.g., “Updating system packages.”) then executes.
 
 Examples
 ```zsh
@@ -89,38 +93,66 @@ python scripts/commands.py --plan "increase brightness"
 python scripts/commands.py --exec-id brightness_up
 ```
 
-Arch updates progress
+System updates (listing + polkit + progress)
 ```zsh
-# Shows a YAD progress bar and status while running via polkit
-scripts/arch_update.sh
+# Show available updates (Official, AUR, Flatpak), confirm, then update with progress
+scripts/syst_upd.sh
+
+# Voice command examples (through the assistant):
+# "system update", "update packages", "update my system packages", "apply updates"
 ```
+
+Dependencies for updates
+```zsh
+# Official updates listing requires pacman-contrib (checkupdates)
+sudo pacman -S pacman-contrib
+
+# Optional AUR helper for AUR updates
+paru -S yay  # or install paru itself
+
+# Optional Flatpak support
+sudo pacman -S flatpak
+```
+
+Polkit pre-auth (focus fix)
+- To prevent the YAD progress window from covering the polkit password dialog, the update scripts pre-auth with `pkexec true` before opening YAD.
+- Ensure a polkit agent is running (e.g., `polkit-gnome`, `polkit-kde-agent`, `lxqt-policykit`).
 
 ## Project Structure
 ```
 btw/
 ├── README.md
-├── assets/
 ├── scripts/
-│   ├── assistant.sh
-│   ├── env.sh
-│   ├── stt.sh
-│   ├── tts.sh
-│   ├── vad_record.py
-│   ├── commands.py
-│   ├── matcher.py
-│   ├── embeddings.py
-│   ├── commands.json
-│   ├── arch_update.sh
-│   └── commands_cache.json (generated)
+    ├── assistant.sh
+    ├── env.sh
+    ├── stt.sh
+    ├── tts.sh
+    ├── vad_record.py
+    ├── commands.py
+    ├── matcher.py
+    ├── embeddings.py
+    ├── commands.json
+    ├── arch_update.sh
+    ├── syst_upd.sh
+    └── commands_cache.json (generated)
 ├── tmp/
-│   ├── query.wav
-│   └── tts_output.wav
+    ├── query.wav
+    └── tts_output.wav
 └── ui/
+	├── assets/
 	├── ass2.css
 	├── assistant.css
 	├── listening.html
 	├── processing.html
 	└── reply.html
+
+## Troubleshooting
+- Polkit dialog behind YAD: Fixed by pre-auth (`pkexec true`) before showing progress. Verify a polkit agent is running.
+- Unbound variable errors in `syst_upd.sh`: Install `pacman-contrib` for `checkupdates`; script initializes missing vars under `set -u`.
+- Weak command matching after registry changes: remove the cache to rebuild embeddings.
+```zsh
+rm -f scripts/commands_cache.json
+```
 
 ```
 
