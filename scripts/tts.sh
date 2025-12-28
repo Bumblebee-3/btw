@@ -11,15 +11,21 @@ fi
 INPUT_TEXT=${1:-"Hello, this is a test of Groq TTS."}
 echo "DEBUG TTS input text: <${INPUT_TEXT}>"
 
+OUT_WAV=$(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/tmp/tts_output.wav
+
+PAYLOAD=$(jq -Rn --arg text "$INPUT_TEXT" '
+  {
+    model: "playai-tts",
+    input: $text,
+    voice: "Celeste-PlayAI",
+    response_format: "wav"
+  }
+')
+
 curl -sS --fail https://api.groq.com/openai/v1/audio/speech \
   -H "Authorization: Bearer $GROQ_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-    "model": "playai-tts",
-    "input": "'""${INPUT_TEXT}""'",
-    "voice": "Celeste-PlayAI",
-    "response_format": "wav"
-  }' \
-  --output $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/tmp/tts_output.wav
+  -d "$PAYLOAD" \
+  --output "$OUT_WAV"
 
-echo "Saved audio to $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/tmp/tts_output.wav"
+echo "Saved audio to $OUT_WAV"

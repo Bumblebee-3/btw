@@ -35,10 +35,13 @@ fi
 CMD_JSON=$(python $(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/commands.py --plan "$TEXT" 2>/dev/null || true)
 CMD_TYPE=$(printf '%s' "$CMD_JSON" | jq -r '.type // empty')
 
+SOURCE=""
 if [[ "$CMD_TYPE" == "confirmed" ]]; then
   REPLY=$(printf '%s' "$CMD_JSON" | jq -r '.spoken // "Done."')
+  SOURCE=""
 elif [[ "$CMD_TYPE" == "cancelled" ]]; then
   REPLY="Cancelled."
+  SOURCE=""
 else
   RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
     -H "Authorization: Bearer $MISTRAL_API_KEY" \
@@ -48,15 +51,60 @@ else
       '{
         model: "mistral-small",
         messages: [
-          {role: "system", content: "You are a concise voice assistant. Respond to the user queries briefly. Use a friendly tone."},
+          {role: "system", content: "You are a concise voice assistant. If the question requires real-time, recent, or live data (news, sports, weather, prices), or if you are unsure, respond ONLY with: NEEDS_LIVE_DATA. Otherwise, answer normally."},
           {role: "user", content: $q}
         ]
       }')"
   )
   REPLY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+  SOURCE="mistral"
+  FALLBACK="false"
+  LIVE_QUERY="false"
+  if echo "$TEXT" | grep -qiE '(news|headline|breaking|today|this week|current|now|weather|forecast|temperature|election|polls|results|price|stock|bitcoin|btc|eth|release|released|announcement|latest|version)'; then
+    LIVE_QUERY="true"
+  else
+    if echo "$TEXT" | grep -qiE '(f1|formula 1)'; then
+      if echo "$TEXT" | grep -qiE '(season|standings|results|race|grand prix|calendar|who won|winner|podium|champion)'; then
+        LIVE_QUERY="true"
+      fi
+    fi
+  fi
+  YEAR=$(echo "$TEXT" | grep -oE '20[0-9]{2}' | head -n1 | tr -d '\n')
+  if [[ -n "$YEAR" && "$YEAR" -ge 2023 ]]; then
+    LIVE_QUERY="true"
+  fi
+  if [[ "$REPLY" == "NEEDS_LIVE_DATA" ]]; then
+    FALLBACK="true"
+  else
+    if echo "$REPLY" | grep -qiE "I don['’]t have access to real-time data|I['’]m not sure|I cannot verify|My knowledge cutoff"; then
+      FALLBACK="true"
+    fi
+  fi
+  if [[ "$LIVE_QUERY" == "true" ]]; then
+    FALLBACK="true"
+  fi
+  if [[ "$FALLBACK" == "true" ]]; then
+    LIVE=$(python "$(cd "$(dirname "$0")" >/dev/null 2>&1 && cd .. && pwd)/scripts/gemini_live.py" --text "$TEXT" 2>/dev/null || true)
+    if [[ -z "$LIVE" ]]; then
+      REPLY="Sorry, I couldn't fetch live information right now."
+      SOURCE="gemini"
+    elif [[ "$LIVE" == "Live data limit reached for today." ]]; then
+      REPLY="$LIVE"
+      SOURCE="gemini"
+    else
+      REPLY="Here’s the latest information. $LIVE"
+      SOURCE="gemini"
+    fi
+  fi
 fi
 
 kill "$PROC_PID" 2>/dev/null || true
+
+if [[ -n "$SOURCE" ]]; then
+  SOURCE_HTML="<div class=\"source\" style=\"font-size:12px;color:#888;margin-top:4px;\">Source: ${SOURCE^}</div>"
+else
+  SOURCE_HTML=""
+fi
 
 cat > "$UI_DIR/reply.html" <<EOF
 <!doctype html>
@@ -68,6 +116,7 @@ cat > "$UI_DIR/reply.html" <<EOF
 <body>
   <div class="assistant-container">
     <div class="title">Bumblebee</div>
+    ${SOURCE_HTML}
 
     <div class="reply-scroll">
 
@@ -94,9 +143,16 @@ yad --html --uri="file://$UI_DIR/reply.html" \
 REPLY_PID=$!
 
 "$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/scripts/tts.sh" "$REPLY"
+SPEAK_TEXT=$(printf '%s' "$REPLY" \
+  | sed -e 's/°F/ degrees Fahrenheit/g' \
+        -e 's/°C/ degrees Celsius/g' \
+        -e 's/°/ degrees /g' \
+        -e 's/%/ percent/g' \
+        -e 's/–/ - /g' \
+        -e 's/—/ - /g')
+"$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/scripts/tts.sh" "$SPEAK_TEXT"
 aplay "$(cd "$(dirname "$0")" >/dev/null 2>&1 &&cd .. && pwd)/tmp/tts_output.wav"
 
-# If a command was confirmed, execute it AFTER speaking
 if [[ "$CMD_TYPE" == "confirmed" ]]; then
   CMD_ID=$(printf '%s' "$CMD_JSON" | jq -r '.id')
   CMD_PARAMS=$(printf '%s' "$CMD_JSON" | jq -c '.params // {}')
