@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+notify-send "Bumblebee Assistant started." -t 2000
 set -e
-
+cd "$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/.."
 source "$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)/env.sh"
 source .venv/bin/activate
 

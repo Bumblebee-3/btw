@@ -9,7 +9,7 @@ venv/
 scripts/env.sh
 scripts/old.sh
 scripts/commands_cache.json
-
+scripts/btw.code-workspace
 .DS_Store
 *.swp
 *.swo
