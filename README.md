@@ -7,6 +7,9 @@
 
 A simple Siri-style assistant for Linux/Hyprland made using speech-to-text from Groq Whisper,and the responses come from the Mistral API.
 
+
+# PROJECT HAS BEEN REWORKED ON; CHECK IT OUT [HERE](https://github.com/Bumblebee-3/BTW-daemon). THIS VERSION IS READ-ONLY.
+
 ## Overview
 - Listening is handled by `vad_record.py` (webrtcvad) and auto-stops on silence.
 - STT uses Groq Whisper via a small Bash script.
